@@ -1,44 +1,46 @@
+// app/api/applications/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Application from "@/models/Application";
 import { getServerSession } from "next-auth";
 
-// POST: Apply for a service (User Only)
-export async function POST(request) {
+export async function POST(req) {
 	const session = await getServerSession();
-	if (!session)
+
+	if (!session) {
 		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-	await connectDB();
-	const body = await request.json();
-
-	const newApp = await Application.create({
-		applicantId: session.user.id,
-		serviceId: body.serviceId,
-		submissionDetails: body.formData,
-		status: "pending",
-	});
-
-	return NextResponse.json(newApp, { status: 201 });
-}
-
-// PUT: Update Status (Staff or Officer)
-export async function PUT(request) {
-	const session = await getServerSession();
-	// Allow Staff or Officer
-	if (!session || !["staff", "officer"].includes(session.user.role)) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 	}
 
-	await connectDB();
-	const { id, status, remarks } = await request.json();
+	try {
+		await connectDB();
+		const body = await req.json();
 
-	// Update logic
-	const updatedApp = await Application.findByIdAndUpdate(
-		id,
-		{ status, remarks },
-		{ new: true }
-	);
+		// Check if user already applied for this specific service
+		const existing = await Application.findOne({
+			applicantId: session.user.id,
+			serviceId: body.serviceId,
+		});
 
-	return NextResponse.json(updatedApp);
+		if (existing) {
+			return NextResponse.json(
+				{ message: "You have already applied for this service." },
+				{ status: 400 }
+			);
+		}
+
+		const newApp = await Application.create({
+			applicantId: session.user.id,
+			serviceId: body.serviceId,
+			formData: body.formData, // e.g., { additionalInfo: "..." }
+			status: "pending",
+		});
+
+		return NextResponse.json(
+			{ message: "Application submitted successfully" },
+			{ status: 201 }
+		);
+	} catch (error) {
+		console.error(error);
+		return NextResponse.json({ error: "Submission failed" }, { status: 500 });
+	}
 }

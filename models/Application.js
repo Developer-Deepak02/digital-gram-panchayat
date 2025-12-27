@@ -1,3 +1,4 @@
+// models/Application.js
 import mongoose from "mongoose";
 
 const ApplicationSchema = new mongoose.Schema(
@@ -17,8 +18,8 @@ const ApplicationSchema = new mongoose.Schema(
 			enum: ["pending", "in-progress", "approved", "rejected"],
 			default: "pending",
 		},
-		remarks: { type: String }, // For Officer/Staff comments
-		submissionDetails: { type: Object }, // To store form data specific to the service
+		remarks: { type: String, default: "" }, // Admin comments
+		formData: { type: Object }, // User submitted details
 	},
 	{ timestamps: true }
 );
