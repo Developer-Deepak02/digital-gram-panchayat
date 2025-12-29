@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Spinner from "@/components/ui/Spinner";
 
 export default function RegisterOfficial() {
 	// Default to staff
@@ -153,9 +154,16 @@ export default function RegisterOfficial() {
 
 					<button
 						disabled={pending}
-						className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 transition-all"
+						className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 disabled:cursor-not-allowed transition-all"
 					>
-						{pending ? "Creating Official Account..." : "Register Official"}
+						{pending ? (
+							<>
+								<Spinner />
+								<span>Verifying Credentials...</span>
+							</>
+						) : (
+							"Register Official"
+						)}
 					</button>
 
 					<p className="text-center text-sm text-slate-600">

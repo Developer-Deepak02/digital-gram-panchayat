@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Spinner from "@/components/ui/Spinner"
 
 export default function RegisterUser() {
 	// 1. Role is hardcoded to 'user'
@@ -130,9 +131,16 @@ export default function RegisterUser() {
 
 					<button
 						disabled={pending}
-						className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-700 hover:bg-teal-800 disabled:bg-teal-300 transition-all"
+						className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-700 hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-teal-400 disabled:cursor-not-allowed transition-all"
 					>
-						{pending ? "Creating Account..." : "Register"}
+						{pending ? (
+							<>
+								<Spinner />
+								<span>Creating Account...</span>
+							</>
+						) : (
+							"Register"
+						)}
 					</button>
 
 					<div className="text-center space-y-2">
@@ -145,7 +153,6 @@ export default function RegisterUser() {
 								Sign in
 							</Link>
 						</p>
-					
 					</div>
 				</form>
 			</div>

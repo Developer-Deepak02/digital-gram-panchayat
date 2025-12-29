@@ -4,149 +4,160 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Spinner from "@/components/ui/Spinner"; // Make sure you created this component in the previous step
 
 export default function LoginPage() {
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
-	const [showPassword, setShowPassword] = useState(false);
+	const [info, setInfo] = useState({ email: "", password: "" });
 	const [error, setError] = useState("");
-	const [loading, setLoading] = useState(false);
-
+	const [pending, setPending] = useState(false); // <--- This was missing!
 	const router = useRouter();
+
+	const handleInput = (e) => {
+		setInfo({ ...info, [e.target.name]: e.target.value });
+	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		setLoading(true);
-		setError("");
+
+		if (!info.email || !info.password) {
+			setError("Please provide all credentials.");
+			return;
+		}
 
 		try {
+			setPending(true); // Start loading spinner
+
 			const res = await signIn("credentials", {
-				email,
-				password,
+				email: info.email,
+				password: info.password,
 				redirect: false,
 			});
 
-			if (res?.error) {
-				setError("Invalid email or password");
-				setLoading(false);
+			if (res.error) {
+				setError("Invalid Credentials.");
+				setPending(false); // Stop spinner on error
 				return;
 			}
 
-			router.replace("/");
-			router.refresh();
-		} catch (err) {
-			console.error(err);
-			setError("Something went wrong. Please try again.");
-			setLoading(false);
+			// Success! The middleware or layout will handle redirection
+			router.replace("/user/services");
+
+			// Note: We don't setPending(false) here because the page
+			// is about to redirect, so we want the spinner to keep spinning
+			// until the new page loads.
+		} catch (error) {
+			setPending(false);
+			setError("Something went wrong.");
 		}
 	};
 
 	return (
-		<div className="flex items-center justify-center min-h-screen bg-slate-100 px-4">
-			<div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-				<h2 className="text-2xl font-semibold text-slate-900 text-center">
-					Digital Gram Panchayat
-				</h2>
-				<p className="text-sm text-slate-600 text-center mt-1 mb-6">
-					Secure login for citizens & officials
-				</p>
+		<div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+			<div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] border border-slate-100">
+				{/* Header */}
+				<div className="text-center">
+					<div className="w-12 h-12 bg-teal-700 rounded-lg flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-teal-900/20">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+							<polyline points="10 17 15 12 10 7" />
+							<line x1="15" y1="12" x2="3" y2="12" />
+						</svg>
+					</div>
+					<h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+						Welcome Back
+					</h2>
+					<p className="mt-2 text-slate-600">
+						Sign in to access your dashboard.
+					</p>
+				</div>
 
+				{/* Error Message */}
 				{error && (
-					<div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md mb-4 text-sm">
+					<div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm text-center flex items-center justify-center gap-2">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<line x1="12" y1="8" x2="12" y2="12" />
+							<line x1="12" y1="16" x2="12.01" y2="16" />
+						</svg>
 						{error}
 					</div>
 				)}
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* Email */}
-					<div>
-						<label className="block text-sm font-medium text-slate-700 mb-1">
-							Email Address
-						</label>
-						<input
-							type="email"
-							value={email}
-							onChange={(e) => setEmail(e.target.value)}
-							placeholder="name@example.com"
-							required
-							className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900
-							focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
-						/>
-					</div>
-
-					{/* Password */}
-					<div>
-						<label className="block text-sm font-medium text-slate-700 mb-1">
-							Password
-						</label>
-
-						<div className="relative">
+				<form onSubmit={handleSubmit} className="mt-8 space-y-6">
+					<div className="space-y-4">
+						<div>
+							<label className="block text-sm font-medium text-slate-700 mb-1">
+								Email Address
+							</label>
 							<input
-								type={showPassword ? "text" : "password"}
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-								placeholder="••••••••"
+								name="email"
+								type="email"
 								required
-								className="w-full px-3 py-2 pr-10 rounded-md bg-slate-50 border border-slate-300 text-slate-900
-								focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition outline-none"
+								placeholder="name@example.com"
+								onChange={handleInput}
 							/>
+						</div>
 
-							<button
-								type="button"
-								onClick={() => setShowPassword(!showPassword)}
-								className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-700"
-							>
-								{showPassword ? (
-									// eye-off
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										className="h-5 w-5 cursor-pointer"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2"
-									>
-										<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.9 21.9 0 0 1 5.06-6.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.9 21.9 0 0 1-2.17 3.19" />
-										<path d="M1 1l22 22" />
-									</svg>
-								) : (
-									// eye
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										className="h-5 w-5 cursor-pointer"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2"
-									>
-										<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-										<circle cx="12" cy="12" r="3" />
-									</svg>
-								)}
-							</button>
+						<div>
+							<label className="block text-sm font-medium text-slate-700 mb-1">
+								Password
+							</label>
+							<input
+								name="password"
+								type="password"
+								required
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition outline-none"
+								placeholder="••••••••"
+								onChange={handleInput}
+							/>
 						</div>
 					</div>
 
-					{/* Button */}
 					<button
-						type="submit"
-						disabled={loading}
-						className="w-full bg-teal-700 text-white py-2.5 rounded-md font-medium
-						hover:bg-teal-800 transition disabled:bg-teal-600 cursor-pointer"
+						disabled={pending}
+						className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-700 hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-teal-400 disabled:cursor-not-allowed transition-all"
 					>
-						{loading ? "Signing in..." : "Login"}
+						{pending ? (
+							<>
+								<Spinner />
+								<span>Signing in...</span>
+							</>
+						) : (
+							"Sign In"
+						)}
 					</button>
-				</form>
 
-				<p className="mt-5 text-center text-sm text-slate-600">
-					Don’t have an account?{" "}
-					<Link
-						href="/register"
-						className="text-teal-700 font-medium hover:underline"
-					>
-						Register here
-					</Link>
-				</p>
+					<p className="text-center text-sm text-slate-600">
+						Don't have an account?{" "}
+						<Link
+							href="/register"
+							className="font-medium text-teal-700 hover:text-teal-600"
+						>
+							Register here
+						</Link>
+					</p>
+				</form>
 			</div>
 		</div>
 	);
