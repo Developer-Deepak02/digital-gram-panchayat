@@ -6,9 +6,8 @@ export default function OfficerApplications() {
 	const [applications, setApplications] = useState([]);
 	const [loading, setLoading] = useState(true);
 
-	// Fetch all applications
 	useEffect(() => {
-		fetch("/api/applications?role=officer") // We can reuse the GET route
+		fetch("/api/applications")
 			.then((res) => res.json())
 			.then((data) => {
 				setApplications(data);
@@ -17,7 +16,6 @@ export default function OfficerApplications() {
 	}, []);
 
 	const handleUpdateStatus = async (id, newStatus, currentRemarks) => {
-		// Optional: Ask for remarks if rejecting
 		let remarks = currentRemarks || "";
 		if (newStatus === "rejected") {
 			remarks = prompt("Enter reason for rejection (optional):") || "";
@@ -33,7 +31,6 @@ export default function OfficerApplications() {
 			});
 
 			if (res.ok) {
-				// Update UI locally to reflect change instantly
 				setApplications((apps) =>
 					apps.map((app) =>
 						app._id === id ? { ...app, status: newStatus, remarks } : app
@@ -45,7 +42,6 @@ export default function OfficerApplications() {
 		}
 	};
 
-	// Helper for badges
 	const getStatusBadge = (status) => {
 		const styles = {
 			pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -96,7 +92,6 @@ export default function OfficerApplications() {
 						key={app._id}
 						className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] flex flex-col lg:flex-row gap-6 justify-between items-start"
 					>
-						{/* Left: Details */}
 						<div className="flex-1">
 							<div className="flex items-center gap-3 mb-2">
 								<h3 className="text-lg font-bold text-slate-800">
@@ -119,7 +114,6 @@ export default function OfficerApplications() {
 									{new Date(app.createdAt).toLocaleDateString()}
 								</p>
 
-								{/* Show form data if exists */}
 								{app.formData && app.formData.notes && (
 									<div className="col-span-2 mt-2 bg-slate-50 p-2 rounded border border-slate-100">
 										<span className="font-semibold text-slate-900">
@@ -137,8 +131,8 @@ export default function OfficerApplications() {
 							)}
 						</div>
 
-						{/* Right: Actions */}
-						{app.status === "pending" && (
+						{/* --- FIX IS HERE: Allow actions for 'pending' OR 'in-progress' --- */}
+						{(app.status === "pending" || app.status === "in-progress") && (
 							<div className="flex flex-col sm:flex-row gap-3 min-w-[200px]">
 								<button
 									onClick={() =>

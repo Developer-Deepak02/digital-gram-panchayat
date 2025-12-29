@@ -1,67 +1,16 @@
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
+// Import the new Navbar
+import Navbar from "@/components/layouts/Navbar";
 
 export default async function Home() {
 	const session = await getServerSession(authOptions);
 
 	return (
 		<div className="min-h-screen bg-slate-50 flex flex-col">
-			{/* --- Navigation --- */}
-			<nav className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center shadow-sm">
-				<div className="text-xl font-bold text-teal-800 flex items-center gap-2">
-					{/* Simple Icon */}
-					<div className="w-8 h-8 bg-teal-700 rounded-md flex items-center justify-center text-white">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="18"
-							height="18"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						>
-							<path d="M3 21h18" />
-							<path d="M5 21V7l8-4 8 4v14" />
-							<path d="M9 10a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2" />
-						</svg>
-					</div>
-					Digital Gram Panchayat
-				</div>
-
-				<div className="flex gap-4">
-					{!session ? (
-						<>
-							<Link
-								href="/login"
-								className="text-slate-600 font-medium hover:text-teal-700 px-3 py-2 transition"
-							>
-								Login
-							</Link>
-							<Link
-								href="/register"
-								className="bg-teal-700 text-white px-5 py-2 rounded-md font-medium hover:bg-teal-800 transition shadow-sm"
-							>
-								Register
-							</Link>
-						</>
-					) : (
-						<div className="flex items-center gap-4">
-							<span className="text-sm text-slate-500 hidden sm:inline">
-								Welcome, {session.user.name}
-							</span>
-							<Link
-								href="/api/auth/signout"
-								className="text-slate-600 font-medium hover:text-red-600 transition"
-							>
-								Logout
-							</Link>
-						</div>
-					)}
-				</div>
-			</nav>
+			{/* USE THE NEW NAVBAR HERE */}
+			<Navbar />
 
 			{/* --- Hero Section --- */}
 			<main className="flex-1 flex flex-col items-center justify-center text-center px-4 py-20">
@@ -114,7 +63,7 @@ export default async function Home() {
 				</div>
 			</main>
 
-			{/* --- Features Grid (Decorative) --- */}
+			{/* --- Features Grid --- */}
 			<section
 				id="features"
 				className="bg-white border-t border-slate-200 py-16 px-4"
@@ -130,7 +79,6 @@ export default async function Home() {
 					<FeatureCard
 						title="Real-time Tracking"
 						desc="Check the status of your application instantly via your dashboard."
-						// FIXED: Added <>...</> wrapper below
 						icon={
 							<>
 								<circle cx="12" cy="12" r="10" />
@@ -154,7 +102,6 @@ export default async function Home() {
 	);
 }
 
-// Helper Component for Features
 function FeatureCard({ title, desc, icon }) {
 	return (
 		<div className="p-6 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md transition">

@@ -1,190 +1,153 @@
-// app/(auth)/register/page.jsx
 "use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function RegisterPage() {
-	const [formData, setFormData] = useState({
+export default function RegisterUser() {
+	// 1. Role is hardcoded to 'user'
+	const [info, setInfo] = useState({
 		name: "",
 		email: "",
 		password: "",
 		role: "user",
 	});
-	const [showPassword, setShowPassword] = useState(false);
 	const [error, setError] = useState("");
-	const [loading, setLoading] = useState(false);
-
+	const [pending, setPending] = useState(false);
 	const router = useRouter();
 
-	const handleChange = (e) => {
-		setFormData({ ...formData, [e.target.name]: e.target.value });
+	const handleInput = (e) => {
+		setInfo({ ...info, [e.target.name]: e.target.value });
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		setError("");
-		setLoading(true);
+		if (!info.name || !info.email || !info.password) {
+			setError("Please provide all the details.");
+			return;
+		}
 
 		try {
+			setPending(true);
 			const res = await fetch("/api/register", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(formData),
+				body: JSON.stringify(info),
 			});
 
 			if (res.ok) {
+				setPending(false);
 				router.push("/login");
 			} else {
-				const data = await res.json();
-				setError(data.message || "Registration failed");
+				const errorData = await res.json();
+				setError(errorData.message);
+				setPending(false);
 			}
-		} catch (err) {
-			setError("Something went wrong. Please try again.");
-		} finally {
-			setLoading(false);
+		} catch (error) {
+			setPending(false);
+			setError("Something went wrong.");
 		}
 	};
 
 	return (
-		<div className="flex items-center justify-center min-h-screen bg-slate-100 px-4">
-			<div className="w-full max-w-md bg-white border border-slate-200 rounded-xl p-8 shadow-[0_10px_30px_rgba(0,0,0,0.06)]">
-				<h2 className="text-2xl font-semibold text-slate-900 text-center">
-					Digital Gram Panchayat
-				</h2>
-				<p className="text-sm text-slate-600 text-center mt-1 mb-6">
-					Create a new citizen or official account
-				</p>
+		<div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+			<div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] border border-slate-100">
+				<div className="text-center">
+					<div className="w-12 h-12 bg-teal-700 rounded-lg flex items-center justify-center text-white mx-auto mb-4 shadow-lg shadow-teal-900/20">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							strokeWidth="2"
+							strokeLinecap="round"
+							strokeLinejoin="round"
+						>
+							<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+							<circle cx="8.5" cy="7" r="4" />
+							<line x1="20" y1="8" x2="20" y2="14" />
+							<line x1="23" y1="11" x2="17" y2="11" />
+						</svg>
+					</div>
+					<h2 className="text-3xl font-bold text-slate-900 tracking-tight">
+						Citizen Registration
+					</h2>
+					<p className="mt-2 text-slate-600">
+						Create your account to access services.
+					</p>
+				</div>
 
 				{error && (
-					<div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md mb-4 text-sm">
+					<div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm text-center">
 						{error}
 					</div>
 				)}
 
-				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* Full Name */}
-					<div>
-						<label className="block text-sm font-medium text-slate-700 mb-1">
-							Full Name
-						</label>
-						<input
-							name="name"
-							type="text"
-							required
-							placeholder="John Doe"
-							onChange={handleChange}
-							className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900
-							focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
-						/>
-					</div>
-
-					{/* Email */}
-					<div>
-						<label className="block text-sm font-medium text-slate-700 mb-1">
-							Email Address
-						</label>
-						<input
-							name="email"
-							type="email"
-							required
-							placeholder="example@xyz.com"
-							onChange={handleChange}
-							className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900
-							focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
-						/>
-					</div>
-
-					{/* Password */}
-					<div>
-						<label className="block text-sm font-medium text-slate-700 mb-1">
-							Password
-						</label>
-						<div className="relative">
+				<form onSubmit={handleSubmit} className="mt-8 space-y-6">
+					<div className="space-y-4">
+						<div>
+							<label className="block text-sm font-medium text-slate-700 mb-1">
+								Full Name
+							</label>
+							<input
+								name="name"
+								type="text"
+								required
+								onChange={handleInput}
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+								placeholder="e.g. Rahul Kumar"
+							/>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-slate-700 mb-1">
+								Email Address
+							</label>
+							<input
+								name="email"
+								type="email"
+								required
+								onChange={handleInput}
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+								placeholder="name@example.com"
+							/>
+						</div>
+						<div>
+							<label className="block text-sm font-medium text-slate-700 mb-1">
+								Password
+							</label>
 							<input
 								name="password"
-								type={showPassword ? "text" : "password"}
+								type="password"
 								required
+								onChange={handleInput}
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
 								placeholder="••••••••"
-								onChange={handleChange}
-								className="w-full px-3 py-2 pr-10 rounded-md bg-slate-50 border border-slate-300 text-slate-900
-								focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
 							/>
-
-							<button
-								type="button"
-								onClick={() => setShowPassword(!showPassword)}
-								className="absolute inset-y-0 right-3 flex items-center text-slate-500 hover:text-slate-700"
-							>
-								{showPassword ? (
-									// eye-off
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										className="h-5 w-5 cursor-pointer"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2"
-									>
-										<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.9 21.9 0 0 1 5.06-6.94M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.9 21.9 0 0 1-2.17 3.19" />
-										<path d="M1 1l22 22" />
-									</svg>
-								) : (
-									// eye
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										className="h-5 w-5 cursor-pointer"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="2"
-									>
-										<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-										<circle cx="12" cy="12" r="3" />
-									</svg>
-								)}
-							</button>
 						</div>
 					</div>
 
-					{/* Role */}
-					<div>
-						<label className="block text-sm font-medium text-slate-700 mb-1">
-							Role (For Testing)
-						</label>
-						<select
-							name="role"
-							onChange={handleChange}
-							className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900
-							focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
-						>
-							<option value="user">Citizen (User)</option>
-							<option value="staff">Staff Member</option>
-							<option value="officer">Officer (Admin)</option>
-						</select>
-					</div>
-
-					{/* Button */}
 					<button
-						type="submit"
-						disabled={loading}
-						className="w-full bg-teal-700 text-white py-2.5 rounded-md font-medium
-						hover:bg-teal-800 transition disabled:bg-teal-600 cursor-pointer"
+						disabled={pending}
+						className="w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-700 hover:bg-teal-800 disabled:bg-teal-300 transition-all"
 					>
-						{loading ? "Creating account..." : "Register"}
+						{pending ? "Creating Account..." : "Register"}
 					</button>
-				</form>
 
-				<p className="mt-5 text-center text-sm text-slate-600">
-					Already have an account?{" "}
-					<Link
-						href="/login"
-						className="text-teal-700 font-medium hover:underline"
-					>
-						Login here
-					</Link>
-				</p>
+					<div className="text-center space-y-2">
+						<p className="text-sm text-slate-600">
+							Already have an account?{" "}
+							<Link
+								href="/login"
+								className="font-medium text-teal-700 hover:text-teal-600"
+							>
+								Sign in
+							</Link>
+						</p>
+					
+					</div>
+				</form>
 			</div>
 		</div>
 	);
