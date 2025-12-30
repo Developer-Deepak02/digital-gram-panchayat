@@ -1,36 +1,112 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏛️ Digital Gram Panchayat
 
-## Getting Started
+![Project Status](https://img.shields.io/badge/Status-Active-success?style=flat-square)
+![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)
+![Next.js](https://img.shields.io/badge/Next.js-15.0-black?style=flat-square&logo=next.js)
+![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green?style=flat-square&logo=mongodb)
 
-First, run the development server:
+**Digital Gram Panchayat** is a modern e-governance web application designed to bridge the gap between rural citizens and the Gram Panchayat administration. It enables citizens to view and apply for government schemes online while providing officials with robust tools to manage applications and services efficiently.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 📑 Table of Contents
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [✨ Key Features](#-key-features)
+- [🚧 Upcoming Updates](#-upcoming-updates)
+- [🛠️ Tech Stack](#-tech-stack)
+- [🚀 Getting Started](#-getting-started)
+- [🔑 Environment Variables](#-environment-variables)
+- [📖 Usage Guide](#-usage-guide)
+- [🤝 Contributing](#-contributing)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## ✨ Key Features
 
-To learn more about Next.js, take a look at the following resources:
+### 👤 For Citizens (Users)
+- **Secure Registration & Login:** Easy signup process to access the portal.
+- **Service Discovery:** Browse all available government schemes and services.
+- **One-Click Application:** Apply for schemes instantly with auto-filled profile data.
+- **Duplicate Prevention:** Smart checks to prevent applying for the same scheme twice.
+- **Real-time Status:** Track application status (Pending, In-Progress, Approved, Rejected).
+- **Profile Management:** Update personal details like mobile number and email securely.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 👮‍♂️ For Officers & Staff (Admin)
+- **Role-Based Dashboard:** Dedicated interface for Officers and Staff.
+- **Scheme Management:** Create, update, and delete government schemes dynamically.
+- **Application Workflow:** Review applications, verify details, and move them to "In-Progress".
+- **Decision System:** Approve or Reject applications with custom remarks.
+- **Professional Feedback:** Send professional rejection reasons or approval notes to users.
+- **Secure Access:** Officer registration protected by a secret admin code.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🚧 Upcoming Updates
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+We are constantly working to improve the Digital Gram Panchayat platform. Here is what's coming in the next version:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **📄 Document Verification System:** Users will soon be able to upload required documents (Aadhaar, Income Certificate, etc.) directly during the application process. Officers will have the ability to view and verify these documents securely within the dashboard.
+- **🌐 Multi-Language Support:** To make the platform accessible to everyone, we are adding support for multiple regional languages (Hindi, Punjabi, Marathi, etc.), allowing users to navigate the site in their native language.
+- **🔔 SMS & Email Notifications:** Automated alerts sent to users whenever their application status changes.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+| :--- | :--- |
+| **Frontend** | [Next.js](https://nextjs.org/) (React), Tailwind CSS |
+| **Backend** | Next.js API Routes (Serverless Functions) |
+| **Database** | [MongoDB](https://www.mongodb.com/) (Mongoose ODM) |
+| **Authentication** | [NextAuth.js](https://next-auth.js.org/) (Credentials Provider) |
+| **Notifications** | [Sonner](https://sonner.emilkowal.ski/) (Toast Notifications) |
+| **Icons** | Lucide React |
+| **Deployment** | Vercel |
+
+---
+
+## 🚀 Getting Started
+
+Follow these steps to run the project locally on your machine.
+
+### Prerequisites
+- Node.js (v18 or higher)
+- MongoDB Atlas Account (or local MongoDB)
+
+### Installation
+
+1.  **Clone the Repository**
+    ```bash
+    git clone [https://github.com/Developer-Deepak02/digital-gram-panchayat.git](https://github.com/Developer-Deepak02/digital-gram-panchayat.git)
+    cd digital-gram-panchayat
+    ```
+
+2.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Set Up Environment Variables**
+    Create a `.env` file in the root directory and add your secrets (see below).
+
+4.  **Run the Development Server**
+    ```bash
+    npm run dev
+    ```
+
+5.  **Open in Browser**
+    Visit [http://localhost:3000](http://localhost:3000) to see the app.
+
+---
+
+## 🔑 Environment Variables
+
+Create a file named `.env` in the root folder and add the following keys:
+
+```env
+# Database Connection String (MongoDB Atlas)
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/gram_panchayat_db
+
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your_super_secret_random_string_here
