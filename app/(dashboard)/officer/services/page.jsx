@@ -1,30 +1,49 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DeleteConfirmationModal from "@/components/ui/DeleteConfirmationModal";
+import { toast } from "sonner";
 
-export default function ServiceManagement() {
-	const [services, setServices] = useState([]);
+export default function OfficerServices() {
+	const [schemes, setSchemes] = useState([]);
+
+	// FIX 1: Updated state key from 'documents' to 'documentsRequired'
 	const [formData, setFormData] = useState({
 		title: "",
 		description: "",
 		eligibility: "",
 		documentsRequired: "",
 	});
-	const [loading, setLoading] = useState(false);
+
+	const [loading, setLoading] = useState(true);
+
+	// Modal State
+	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+	const [schemeToDeleteId, setSchemeToDeleteId] = useState(null);
 
 	useEffect(() => {
-		fetchServices();
+		fetchSchemes();
 	}, []);
 
-	const fetchServices = async () => {
-		const res = await fetch("/api/services");
-		const data = await res.json();
-		setServices(data);
+	const fetchSchemes = async () => {
+		try {
+			const res = await fetch("/api/services");
+			const data = await res.json();
+			setSchemes(data);
+			setLoading(false);
+		} catch (error) {
+			toast.error("Failed to load schemes.");
+			setLoading(false);
+		}
+	};
+
+	const handleInput = (e) => {
+		setFormData({ ...formData, [e.target.name]: e.target.value });
 	};
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		setLoading(true);
+		const toastId = toast.loading("Publishing scheme...");
 
 		try {
 			const res = await fetch("/api/services", {
@@ -34,154 +53,170 @@ export default function ServiceManagement() {
 			});
 
 			if (res.ok) {
+				// FIX 2: Reset the correct field name
 				setFormData({
 					title: "",
 					description: "",
 					eligibility: "",
 					documentsRequired: "",
 				});
-				fetchServices();
+				fetchSchemes();
+				toast.dismiss(toastId);
+				toast.success("New scheme published successfully!");
+			} else {
+				toast.dismiss(toastId);
+				toast.error("Failed to create scheme. Try again.");
 			}
 		} catch (error) {
-			alert("Failed to create service");
-		} finally {
-			setLoading(false);
+			toast.dismiss(toastId);
+			toast.error("Something went wrong.");
 		}
 	};
 
-	const handleDelete = async (id) => {
-		if (!confirm("Are you sure you want to delete this scheme?")) return;
-		await fetch(`/api/services?id=${id}`, { method: "DELETE" });
-		fetchServices();
+	const initiateDelete = (id) => {
+		setSchemeToDeleteId(id);
+		setIsDeleteModalOpen(true);
 	};
 
-	return (
-		<div className="max-w-5xl mx-auto">
-			<h1 className="text-2xl font-semibold text-slate-900 mb-6">
-				Manage Schemes
-			</h1>
+	const confirmDelete = async () => {
+		if (!schemeToDeleteId) return;
+		const toastId = toast.loading("Deleting scheme...");
 
-			{/* --- CREATE SERVICE FORM --- */}
-			<div className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] mb-8">
-				<h2 className="text-lg font-medium text-teal-800 mb-4 border-b border-slate-100 pb-2">
-					Add New Scheme
-				</h2>
+		try {
+			const res = await fetch(`/api/services?id=${schemeToDeleteId}`, {
+				method: "DELETE",
+			});
+
+			if (res.ok) {
+				fetchSchemes();
+				toast.dismiss(toastId);
+				toast.success("Scheme deleted successfully.");
+			} else {
+				toast.dismiss(toastId);
+				toast.error("Failed to delete scheme.");
+			}
+		} catch (error) {
+			toast.dismiss(toastId);
+			toast.error("Error deleting scheme.");
+		}
+		setSchemeToDeleteId(null);
+	};
+
+	if (loading)
+		return <div className="p-8 text-slate-500">Loading schemes...</div>;
+
+	return (
+		<div className="max-w-4xl mx-auto relative">
+			<DeleteConfirmationModal
+				isOpen={isDeleteModalOpen}
+				onClose={() => setIsDeleteModalOpen(false)}
+				onConfirm={confirmDelete}
+				title="Delete Scheme"
+				message="Are you sure you want to delete this scheme? This action cannot be undone."
+			/>
+
+			<h1 className="text-2xl font-bold text-slate-900 mb-6">Manage Schemes</h1>
+
+			{/* Create Scheme Form */}
+			<div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-8">
+				<h2 className="text-lg font-bold text-teal-700 mb-4">Add New Scheme</h2>
 				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
 						<label className="block text-sm font-medium text-slate-700 mb-1">
 							Scheme Title
 						</label>
 						<input
-							type="text"
-							placeholder="e.g. Housing Support 2025"
-							className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
+							name="title"
 							value={formData.title}
-							onChange={(e) =>
-								setFormData({ ...formData, title: e.target.value })
-							}
+							onChange={handleInput}
+							type="text"
 							required
+							className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-teal-500 outline-none transition"
+							placeholder="e.g. Housing Support 2025"
 						/>
 					</div>
-
 					<div>
 						<label className="block text-sm font-medium text-slate-700 mb-1">
 							Description
 						</label>
 						<textarea
-							placeholder="Describe the scheme details..."
-							className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
-							rows="3"
+							name="description"
 							value={formData.description}
-							onChange={(e) =>
-								setFormData({ ...formData, description: e.target.value })
-							}
+							onChange={handleInput}
 							required
+							className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-teal-500 outline-none transition"
+							rows="3"
+							placeholder="Describe the scheme details..."
 						/>
 					</div>
-
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
 							<label className="block text-sm font-medium text-slate-700 mb-1">
 								Eligibility
 							</label>
 							<input
-								type="text"
-								placeholder="e.g. Income < 2 Lakhs"
-								className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
+								name="eligibility"
 								value={formData.eligibility}
-								onChange={(e) =>
-									setFormData({ ...formData, eligibility: e.target.value })
-								}
+								onChange={handleInput}
+								type="text"
 								required
+								className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-teal-500 outline-none transition"
+								placeholder="e.g. Income < 2 Lakhs"
 							/>
 						</div>
 						<div>
 							<label className="block text-sm font-medium text-slate-700 mb-1">
 								Documents Required
 							</label>
+							{/* FIX 3: Updated input name and value binding */}
 							<input
-								type="text"
-								placeholder="e.g. Aadhar, Pan Card"
-								className="w-full px-3 py-2 rounded-md bg-slate-50 border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-600/20 focus:border-teal-700"
+								name="documentsRequired"
 								value={formData.documentsRequired}
-								onChange={(e) =>
-									setFormData({
-										...formData,
-										documentsRequired: e.target.value,
-									})
-								}
+								onChange={handleInput}
+								type="text"
 								required
+								className="w-full p-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-teal-500 outline-none transition"
+								placeholder="e.g. Aadhar, Pan Card"
 							/>
 						</div>
 					</div>
-
-					<div className="pt-2">
-						<button
-							type="submit"
-							disabled={loading}
-							className="bg-teal-700 text-white py-2 px-6 rounded-md font-medium hover:bg-teal-800 transition disabled:bg-teal-600"
-						>
-							{loading ? "Publishing..." : "Publish Scheme"}
-						</button>
-					</div>
+					<button className="bg-teal-700 text-white px-6 py-2 rounded-md font-medium hover:bg-teal-800 transition shadow-sm">
+						Publish Scheme
+					</button>
 				</form>
 			</div>
 
-			{/* --- LIST OF SERVICES --- */}
-			<h2 className="text-lg font-medium text-slate-700 mb-4">
+			{/* Existing Schemes List */}
+			<h2 className="text-xl font-bold text-slate-900 mb-4">
 				Existing Schemes
 			</h2>
-			<div className="grid gap-4">
-				{services.length === 0 && (
-					<p className="text-slate-500 italic">
-						No schemes found. Create one above.
-					</p>
-				)}
-
-				{services.map((service) => (
+			<div className="space-y-4">
+				{schemes.map((scheme) => (
 					<div
-						key={service._id}
-						className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex justify-between items-start hover:shadow-md transition"
+						key={scheme._id}
+						className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex justify-between items-start group hover:border-teal-200 transition"
 					>
 						<div>
-							<h3 className="text-lg font-semibold text-slate-900">
-								{service.title}
+							<h3 className="text-lg font-bold text-slate-800 group-hover:text-teal-700 transition">
+								{scheme.title}
 							</h3>
 							<p className="text-slate-600 mt-1 text-sm">
-								{service.description}
+								{scheme.description}
 							</p>
-							<div className="mt-3 flex gap-4 text-xs text-slate-500">
-								<span className="bg-slate-100 px-2 py-1 rounded border border-slate-200">
-									<strong>Eligibility:</strong> {service.eligibility}
+							<div className="flex gap-4 mt-3 text-xs text-slate-500">
+								<span className="bg-slate-100 px-2 py-1 rounded">
+									Eligibility: {scheme.eligibility}
 								</span>
-								<span className="bg-slate-100 px-2 py-1 rounded border border-slate-200">
-									<strong>Docs:</strong> {service.documentsRequired}
+								{/* FIX 4: Rendering the correct field name from API */}
+								<span className="bg-slate-100 px-2 py-1 rounded">
+									Docs: {scheme.documentsRequired}
 								</span>
 							</div>
 						</div>
+
 						<button
-							onClick={() => handleDelete(service._id)}
-							className="text-red-600 hover:text-red-800 text-sm font-medium px-3 py-1 bg-red-50 hover:bg-red-100 rounded-md transition"
+							onClick={() => initiateDelete(scheme._id)}
+							className="bg-red-50 text-red-600 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-red-100 hover:text-red-700 transition border border-red-100"
 						>
 							Delete
 						</button>

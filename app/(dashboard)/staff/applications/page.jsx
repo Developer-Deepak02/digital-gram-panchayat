@@ -1,29 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export default function StaffDashboard() {
 	const [applications, setApplications] = useState([]);
 	const [loading, setLoading] = useState(true);
 
-	// 1. Fetch All Applications
 	useEffect(() => {
 		fetch("/api/applications")
 			.then((res) => res.json())
 			.then((data) => {
-				// Staff usually cares about Pending or In-Progress items
 				setApplications(data);
+				setLoading(false);
+			})
+			.catch((err) => {
+				toast.error("Failed to load applications.");
 				setLoading(false);
 			});
 	}, []);
 
-	// 2. Handle Status Update (e.g., Mark as In-Progress)
 	const handleStatusUpdate = async (id, newStatus) => {
-		// Optional: Add a note when processing
 		const remarks =
 			newStatus === "in-progress"
-				? "Documents verified, processing started."
+				? "Application verified, processing started."
 				: "Status updated by Staff.";
+
+		// Loading Toast
+		const toastId = toast.loading("Updating status...");
 
 		try {
 			const res = await fetch("/api/applications", {
@@ -33,19 +37,23 @@ export default function StaffDashboard() {
 			});
 
 			if (res.ok) {
-				// Update UI instantly
 				setApplications((apps) =>
 					apps.map((app) =>
 						app._id === id ? { ...app, status: newStatus, remarks } : app
 					)
 				);
+				toast.dismiss(toastId);
+				toast.success("Status updated successfully!");
+			} else {
+				toast.dismiss(toastId);
+				toast.error("Update failed.");
 			}
 		} catch (error) {
-			alert("Failed to update status");
+			toast.dismiss(toastId);
+			toast.error("Network error.");
 		}
 	};
 
-	// Helper for Status Badges
 	const getStatusBadge = (status) => {
 		const styles = {
 			pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
@@ -75,11 +83,10 @@ export default function StaffDashboard() {
 						Staff Portal
 					</h1>
 					<p className="text-slate-600 mt-1">
-						Process applications and verify documents.
+						Process applications and verifications.
 					</p>
 				</div>
 
-				{/* Simple Counter */}
 				<div className="flex gap-3">
 					<div className="bg-white px-4 py-2 rounded-md border border-slate-200 shadow-sm text-sm">
 						<span className="text-slate-500 block text-xs uppercase font-bold">
@@ -110,7 +117,6 @@ export default function StaffDashboard() {
 						key={app._id}
 						className="bg-white border border-slate-200 rounded-xl p-6 shadow-[0_10px_30px_rgba(0,0,0,0.06)] flex flex-col lg:flex-row gap-6 justify-between items-start"
 					>
-						{/* Left: Application Details */}
 						<div className="flex-1">
 							<div className="flex items-center gap-3 mb-2">
 								<h3 className="text-lg font-bold text-slate-800">
@@ -138,7 +144,6 @@ export default function StaffDashboard() {
 								</p>
 							</div>
 
-							{/* Current Official Remark */}
 							{app.remarks && (
 								<p className="mt-3 text-xs text-slate-500">
 									<span className="font-bold">Latest Remark:</span>{" "}
@@ -147,7 +152,6 @@ export default function StaffDashboard() {
 							)}
 						</div>
 
-						{/* Right: Staff Actions */}
 						<div className="flex flex-col gap-3 min-w-[200px]">
 							{app.status === "pending" && (
 								<button

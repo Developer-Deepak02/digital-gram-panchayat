@@ -1,10 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import RejectionModal from "@/components/ui/RejectionModal";
+import { toast } from "sonner"; // <--- Import
 
 export default function OfficerApplications() {
 	const [applications, setApplications] = useState([]);
 	const [loading, setLoading] = useState(true);
+
+	// Modal State
+	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [selectedAppId, setSelectedAppId] = useState(null);
 
 	useEffect(() => {
 		fetch("/api/applications")
@@ -15,30 +21,50 @@ export default function OfficerApplications() {
 			});
 	}, []);
 
-	const handleUpdateStatus = async (id, newStatus, currentRemarks) => {
-		let remarks = currentRemarks || "";
-		if (newStatus === "rejected") {
-			remarks = prompt("Enter reason for rejection (optional):") || "";
-		} else if (newStatus === "approved") {
-			remarks = "Approved by Officer";
-		}
+	const initiateRejection = (id) => {
+		setSelectedAppId(id);
+		setIsModalOpen(true);
+	};
+
+	const handleConfirmRejection = (reason) => {
+		handleUpdateStatus(selectedAppId, "rejected", reason);
+	};
+
+	const handleUpdateStatus = async (id, newStatus, remarks) => {
+		const finalRemarks =
+			newStatus === "approved" ? "Approved by Officer" : remarks;
+		const toastId = toast.loading("Updating status..."); // Optional loading
 
 		try {
 			const res = await fetch("/api/applications", {
 				method: "PUT",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ id, status: newStatus, remarks }),
+				body: JSON.stringify({ id, status: newStatus, remarks: finalRemarks }),
 			});
 
 			if (res.ok) {
 				setApplications((apps) =>
 					apps.map((app) =>
-						app._id === id ? { ...app, status: newStatus, remarks } : app
+						app._id === id
+							? { ...app, status: newStatus, remarks: finalRemarks }
+							: app
 					)
 				);
+				toast.dismiss(toastId);
+
+				// --- CUSTOM TOASTS ---
+				if (newStatus === "approved") {
+					toast.success("Application Approved");
+				} else {
+					toast.success("Application Rejected"); // You can use toast.info for rejection if you prefer
+				}
+			} else {
+				toast.dismiss(toastId);
+				toast.error("Failed to update status");
 			}
 		} catch (error) {
-			alert("Failed to update status");
+			toast.dismiss(toastId);
+			toast.error("Network error");
 		}
 	};
 
@@ -64,7 +90,7 @@ export default function OfficerApplications() {
 		return <div className="p-8 text-slate-500">Loading applications...</div>;
 
 	return (
-		<div className="max-w-6xl mx-auto">
+		<div className="max-w-6xl mx-auto relative">
 			<div className="flex justify-between items-center mb-6">
 				<div>
 					<h1 className="text-2xl font-semibold text-slate-900">
@@ -81,6 +107,12 @@ export default function OfficerApplications() {
 					</span>
 				</div>
 			</div>
+
+			<RejectionModal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				onConfirm={handleConfirmRejection}
+			/>
 
 			<div className="grid gap-4">
 				{applications.length === 0 && (
@@ -113,7 +145,6 @@ export default function OfficerApplications() {
 									</span>{" "}
 									{new Date(app.createdAt).toLocaleDateString()}
 								</p>
-
 								{app.formData && app.formData.notes && (
 									<div className="col-span-2 mt-2 bg-slate-50 p-2 rounded border border-slate-100">
 										<span className="font-semibold text-slate-900">
@@ -124,6 +155,17 @@ export default function OfficerApplications() {
 								)}
 							</div>
 
+							{app.documentUrl && (
+								<a
+									href={app.documentUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="text-blue-600 underline text-xs block mt-3 font-medium hover:text-blue-800"
+								>
+									View Attached Document
+								</a>
+							)}
+
 							{app.remarks && (
 								<p className="mt-3 text-xs text-slate-500">
 									<span className="font-bold">Last Remark:</span> {app.remarks}
@@ -131,21 +173,16 @@ export default function OfficerApplications() {
 							)}
 						</div>
 
-						{/* --- FIX IS HERE: Allow actions for 'pending' OR 'in-progress' --- */}
 						{(app.status === "pending" || app.status === "in-progress") && (
 							<div className="flex flex-col sm:flex-row gap-3 min-w-[200px]">
 								<button
-									onClick={() =>
-										handleUpdateStatus(app._id, "approved", app.remarks)
-									}
+									onClick={() => handleUpdateStatus(app._id, "approved")}
 									className="flex-1 bg-teal-700 text-white px-4 py-2 rounded-md font-medium hover:bg-teal-800 transition shadow-sm text-sm"
 								>
 									Approve
 								</button>
 								<button
-									onClick={() =>
-										handleUpdateStatus(app._id, "rejected", app.remarks)
-									}
+									onClick={() => initiateRejection(app._id)}
 									className="flex-1 bg-white border border-red-200 text-red-700 px-4 py-2 rounded-md font-medium hover:bg-red-50 transition shadow-sm text-sm"
 								>
 									Reject

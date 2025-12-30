@@ -1,50 +1,63 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/db";
-import User from "@/models/User";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { authOptions } from "@/lib/authOptions"; 
+import User from "@/models/User";
+import connectDB from "@/lib/db"; 
 
 // GET: Fetch current user details
 export async function GET(req) {
-	const session = await getServerSession(authOptions);
-
-	if (!session) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
-
-	await connectDB();
-
-	// Fetch user but exclude the password field for security
-	const user = await User.findById(session.user.id).select("-password");
-
-	if (!user) {
-		return NextResponse.json({ error: "User not found" }, { status: 404 });
-	}
-
-	return NextResponse.json(user);
-}
-
-// PUT: Update user details (Address/Phone)
-export async function PUT(req) {
-	const session = await getServerSession(authOptions);
-
-	if (!session) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
-
 	try {
-		const { phone, address } = await req.json();
+		const session = await getServerSession(authOptions);
+
+		if (!session) {
+			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		}
+
 		await connectDB();
 
-		// Update only specific fields
-		const updatedUser = await User.findByIdAndUpdate(
-			session.user.id,
-			{ phone, address },
-			{ new: true } // Return the updated document
+		const user = await User.findOne({ email: session.user.email }).select(
+			"-password"
+		);
+
+		if (!user) {
+			return NextResponse.json({ message: "User not found" }, { status: 404 });
+		}
+
+		return NextResponse.json(user);
+	} catch (error) {
+		console.error("GET Profile Error:", error);
+		return NextResponse.json(
+			{ message: "Internal Server Error" },
+			{ status: 500 }
+		);
+	}
+}
+
+// PUT: Update user profile
+export async function PUT(req) {
+	try {
+		const session = await getServerSession(authOptions);
+
+		if (!session) {
+			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+		}
+
+		const { name, email, mobile } = await req.json();
+
+		await connectDB();
+
+		const updatedUser = await User.findOneAndUpdate(
+			{ email: session.user.email },
+			{ name, email, mobile },
+			{ new: true }
 		).select("-password");
 
 		return NextResponse.json(updatedUser);
 	} catch (error) {
-		return NextResponse.json({ error: "Update failed" }, { status: 500 });
+		console.error("PUT Profile Error:", error);
+		return NextResponse.json(
+			{ message: "Error updating profile" },
+			{ status: 500 }
+		);
 	}
 }

@@ -1,15 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { signIn } from "next-auth/react"; // Removed getSession as it's no longer needed for redirection
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Spinner from "@/components/ui/Spinner"; // Make sure you created this component in the previous step
+import Spinner from "@/components/ui/Spinner";
+import { toast } from "sonner";
 
 export default function LoginPage() {
 	const [info, setInfo] = useState({ email: "", password: "" });
-	const [error, setError] = useState("");
-	const [pending, setPending] = useState(false); // <--- This was missing!
+	const [pending, setPending] = useState(false);
 	const router = useRouter();
 
 	const handleInput = (e) => {
@@ -20,12 +20,12 @@ export default function LoginPage() {
 		e.preventDefault();
 
 		if (!info.email || !info.password) {
-			setError("Please provide all credentials.");
+			toast.error("Please provide all credentials.");
 			return;
 		}
 
 		try {
-			setPending(true); // Start loading spinner
+			setPending(true);
 
 			const res = await signIn("credentials", {
 				email: info.email,
@@ -34,20 +34,20 @@ export default function LoginPage() {
 			});
 
 			if (res.error) {
-				setError("Invalid Credentials.");
-				setPending(false); // Stop spinner on error
+				toast.error("Invalid Credentials. Please try again.");
+				setPending(false);
 				return;
 			}
 
-			// Success! The middleware or layout will handle redirection
-			router.replace("/user/services");
+			// Success Toast
+			toast.success("Login Successful!");
 
-			// Note: We don't setPending(false) here because the page
-			// is about to redirect, so we want the spinner to keep spinning
-			// until the new page loads.
+			// --- UPDATED: Redirect everyone to Home Page ("/") ---
+			router.replace("/");
+
 		} catch (error) {
 			setPending(false);
-			setError("Something went wrong.");
+			toast.error("Something went wrong.");
 		}
 	};
 
@@ -81,28 +81,6 @@ export default function LoginPage() {
 					</p>
 				</div>
 
-				{/* Error Message */}
-				{error && (
-					<div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm text-center flex items-center justify-center gap-2">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							strokeWidth="2"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						>
-							<circle cx="12" cy="12" r="10" />
-							<line x1="12" y1="8" x2="12" y2="12" />
-							<line x1="12" y1="16" x2="12.01" y2="16" />
-						</svg>
-						{error}
-					</div>
-				)}
-
 				<form onSubmit={handleSubmit} className="mt-8 space-y-6">
 					<div className="space-y-4">
 						<div>
@@ -113,7 +91,7 @@ export default function LoginPage() {
 								name="email"
 								type="email"
 								required
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition outline-none"
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 transition outline-none"
 								placeholder="name@example.com"
 								onChange={handleInput}
 							/>
@@ -127,7 +105,7 @@ export default function LoginPage() {
 								name="password"
 								type="password"
 								required
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition outline-none"
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 transition outline-none"
 								placeholder="••••••••"
 								onChange={handleInput}
 							/>
@@ -140,8 +118,7 @@ export default function LoginPage() {
 					>
 						{pending ? (
 							<>
-								<Spinner />
-								<span>Signing in...</span>
+								<Spinner /> <span>Signing in...</span>
 							</>
 						) : (
 							"Sign In"

@@ -3,17 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Spinner from "@/components/ui/Spinner"
+import Spinner from "@/components/ui/Spinner";
+import { toast } from "sonner"; // <--- Import
 
 export default function RegisterUser() {
-	// 1. Role is hardcoded to 'user'
 	const [info, setInfo] = useState({
 		name: "",
 		email: "",
 		password: "",
 		role: "user",
 	});
-	const [error, setError] = useState("");
 	const [pending, setPending] = useState(false);
 	const router = useRouter();
 
@@ -24,7 +23,7 @@ export default function RegisterUser() {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (!info.name || !info.email || !info.password) {
-			setError("Please provide all the details.");
+			toast.error("Please provide all the details."); // <--- Toast
 			return;
 		}
 
@@ -38,15 +37,16 @@ export default function RegisterUser() {
 
 			if (res.ok) {
 				setPending(false);
+				toast.success("Account Created Successfully!"); // <--- Toast
 				router.push("/login");
 			} else {
 				const errorData = await res.json();
-				setError(errorData.message);
+				toast.error(errorData.message || "Registration failed."); // <--- Toast
 				setPending(false);
 			}
 		} catch (error) {
 			setPending(false);
-			setError("Something went wrong.");
+			toast.error("Something went wrong."); // <--- Toast
 		}
 	};
 
@@ -80,12 +80,6 @@ export default function RegisterUser() {
 					</p>
 				</div>
 
-				{error && (
-					<div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm text-center">
-						{error}
-					</div>
-				)}
-
 				<form onSubmit={handleSubmit} className="mt-8 space-y-6">
 					<div className="space-y-4">
 						<div>
@@ -97,7 +91,7 @@ export default function RegisterUser() {
 								type="text"
 								required
 								onChange={handleInput}
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
 								placeholder="e.g. Rahul Kumar"
 							/>
 						</div>
@@ -110,7 +104,7 @@ export default function RegisterUser() {
 								type="email"
 								required
 								onChange={handleInput}
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
 								placeholder="name@example.com"
 							/>
 						</div>
@@ -123,7 +117,7 @@ export default function RegisterUser() {
 								type="password"
 								required
 								onChange={handleInput}
-								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:outline-none"
+								className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none"
 								placeholder="••••••••"
 							/>
 						</div>
@@ -131,12 +125,11 @@ export default function RegisterUser() {
 
 					<button
 						disabled={pending}
-						className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-700 hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:bg-teal-400 disabled:cursor-not-allowed transition-all"
+						className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-700 hover:bg-teal-800 disabled:bg-teal-300 transition-all"
 					>
 						{pending ? (
 							<>
-								<Spinner />
-								<span>Creating Account...</span>
+								<Spinner /> <span>Creating Account...</span>
 							</>
 						) : (
 							"Register"

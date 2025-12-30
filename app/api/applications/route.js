@@ -1,99 +1,104 @@
-// app/api/applications/route.js
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Application from "@/models/Application";
+import Service from "@/models/Service";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions"; // <--- Import this
+import { authOptions } from "@/lib/authOptions";
 
 export async function POST(req) {
-	// PASS authOptions HERE
-	const session = await getServerSession(authOptions);
-
-	if (!session) {
-		return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-	}
-
 	try {
-		await connectDB();
+		const session = await getServerSession(authOptions);
+		if (!session)
+			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
 		const body = await req.json();
 
-		// Check for duplicates
-		const existing = await Application.findOne({
-			applicantId: session.user.id,
-			serviceId: body.serviceId,
-		});
-
-		if (existing) {
+		// Validate Input
+		if (!body.serviceId) {
 			return NextResponse.json(
-				{ message: "You have already applied for this service." },
+				{ message: "Service ID is required" },
 				{ status: 400 }
 			);
 		}
 
-		const newApp = await Application.create({
-			applicantId: session.user.id, // This requires the session callback to run
+		await connectDB();
+
+		// --- NEW CHECK: Prevent Duplicates ---
+		const existingApplication = await Application.findOne({
+			applicantId: session.user.id,
 			serviceId: body.serviceId,
-			formData: body.formData,
-			status: "pending",
 		});
 
-		return NextResponse.json(
-			{ message: "Application submitted successfully" },
-			{ status: 201 }
-		);
+		if (existingApplication) {
+			return NextResponse.json(
+				{ message: "You have already applied for this scheme." },
+				{ status: 409 } // 409 Conflict
+			);
+		}
+		// -------------------------------------
+
+		const newApp = await Application.create({
+			applicantId: session.user.id,
+			serviceId: body.serviceId,
+			formData: body.formData,
+		});
+
+		return NextResponse.json(newApp, { status: 201 });
 	} catch (error) {
-		console.error("Application Error:", error); // Check terminal if it fails again
-		return NextResponse.json({ error: "Submission failed" }, { status: 500 });
+		console.error("POST Application Error:", error);
+		return NextResponse.json(
+			{ message: "Error submitting application" },
+			{ status: 500 }
+		);
 	}
 }
 
 
-// GET: Fetch Applications
 export async function GET(req) {
-  const session = await getServerSession(authOptions);
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session)
+			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+		await connectDB();
 
-  await connectDB();
+		let query = {};
+		if (session.user.role === "user") {
+			query = { applicantId: session.user.id };
+		}
 
-  let query = {};
+		const applications = await Application.find(query)
+			.populate("serviceId", "title description")
+			.sort({ createdAt: -1 });
 
-  // If user is just a citizen, only show their own apps
-  if (session.user.role === 'user') {
-    query = { applicantId: session.user.id };
-  }
-  // If Officer/Staff, query remains empty {} so they see ALL apps
-
-  const applications = await Application.find(query)
-    .populate('serviceId', 'title description') 
-    .sort({ createdAt: -1 });
-
-  return NextResponse.json(applications);
+		return NextResponse.json(applications);
+	} catch (error) {
+		console.error("GET Application Error:", error);
+		return NextResponse.json(
+			{ message: "Error fetching applications" },
+			{ status: 500 }
+		);
+	}
 }
 
-// PUT: Update Application Status (Officer Only)
 export async function PUT(req) {
-  const session = await getServerSession(authOptions);
+	try {
+		const session = await getServerSession(authOptions);
+		if (!session)
+			return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
-  // Security: Check if user is Officer or Staff
-  if (!session || !['officer', 'staff'].includes(session.user.role)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-  }
+		const { id, status, remarks } = await req.json();
 
-  try {
-    await connectDB();
-    const { id, status, remarks } = await req.json();
+		await connectDB();
+		const updatedApp = await Application.findByIdAndUpdate(
+			id,
+			{ status, remarks },
+			{ new: true }
+		);
 
-    const updatedApp = await Application.findByIdAndUpdate(
-      id, 
-      { status, remarks }, 
-      { new: true }
-    );
-
-    return NextResponse.json(updatedApp);
-  } catch (error) {
-    return NextResponse.json({ error: "Update failed" }, { status: 500 });
-  }
+		return NextResponse.json(updatedApp);
+	} catch (error) {
+		console.error("PUT Application Error:", error);
+		return NextResponse.json({ message: "Update failed" }, { status: 500 });
+	}
 }
